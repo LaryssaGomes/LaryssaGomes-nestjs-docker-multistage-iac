@@ -27,30 +27,31 @@ resource "aws_iam_role" "ecr-role" {
     Version = "2012-10-17"
     })
     
-    inline_policy {
-        name = "ecr-app-permissions"
-
-        policy = jsonencode({
-            Statement = [{
-                Sid = "Statement1",
-                Action = [
-                    "ecr:GetDownloadUrlForLayer",
-                    "ecr:BatchGetImage",
-                    "ecr:BatchCheckLayerAvailability",
-                    "ecr:PutImage",
-                    "ecr:InitiateLayerUpload",
-                    "ecr:UploadLayerPart",
-                    "ecr:CompleteLayerUpload",
-                    "ecr:GetAuthorizationToken"
-                ]
-                Effect = "Allow"
-                Resource = "*"
-            }]
-        })
-    }
-
-
     tags = {
         IAC = "True"
     }
+}
+
+resource "aws_iam_role_policy" "ecr-app-permissions" {
+    name = "ecr-app-permissions"
+    role = aws_iam_role.ecr-role.id
+
+    policy = jsonencode({
+        Statement = [{
+            Sid = "Statement1",
+            Action = [
+                "ecr:GetDownloadUrlForLayer",
+                "ecr:BatchGetImage",
+                "ecr:BatchCheckLayerAvailability",
+                "ecr:PutImage",
+                "ecr:InitiateLayerUpload",
+                "ecr:UploadLayerPart",
+                "ecr:CompleteLayerUpload",
+                "ecr:GetAuthorizationToken"
+            ]
+            Effect = "Allow"
+            Resource = "*"
+        }]
+        Version = "2012-10-17"
+    })
 }
