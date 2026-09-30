@@ -163,3 +163,11 @@ resource "aws_iam_role_policy" "ecr-app-permissions" {
         Version = "2012-10-17"
     })
 }
+
+# Service-linked role do ECS (AWSServiceRoleForECS).
+# O ECS usa essa role para gerenciar recursos da conta (rede, load balancer).
+# Contas que nunca usaram ECS não têm essa role, e o CreateExpressGatewayService
+# falha com "Unable to assume the service linked role". Só existe uma por conta.
+resource "aws_iam_service_linked_role" "ecs" {
+    aws_service_name = "ecs.amazonaws.com"
+}
