@@ -19,7 +19,37 @@ resource "aws_iam_openid_connect_provider" "oidc-git" {
         IAC = "True"
     }
 }
+resource "aws_iam_role" "tf-role" {
+    name = "tf_role"
+    assume_role_policy = jsonencode({
+       Statement = [{
+            # Login com token OIDC (web identity), não com access keys.
+            Action = "sts:AssumeRoleWithWebIdentity",
+            # Só aceita o token se as claims baterem EXATAMENTE (StringEquals).
+            Condition = {
+                StringEquals = {
+                    # Token emitido para a AWS.
+                    "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
+                    # Só este repositório, na branch main.
+                    # O GitHub envia o formato com IDs (usuario@id/repo@id); se o repo
+                    # for apagado e recriado com o mesmo nome, o ID muda e o acesso é negado.
+                    # Pull requests enviam ":pull_request" no lugar de ":ref:refs/heads/main".
+                    "token.actions.githubusercontent.com:sub" = "repo:LaryssaGomes@61350150/nestjs-docker-iac@1356158954:ref:refs/heads/main"
+                }
+            }
+            Effect = "Allow",
+            Principal = {
+                # O provedor OIDC do GitHub criado no início deste arquivo.
+                Federated = "arn:aws:iam::223910471502:oidc-provider/token.actions.githubusercontent.com"
+            }
+       }]
+    Version = "2012-10-17"
+    })
 
+    tags = {
+        IAC = "True"
+    }
+}
 # Infrastructure role do ECS Express Mode (vai no infrastructure-role-arn do ci.yml).
 resource "aws_iam_role" "ecs-express-role" {
     name = "ecs_express_role"

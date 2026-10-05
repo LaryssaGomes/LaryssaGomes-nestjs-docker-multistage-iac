@@ -13,6 +13,9 @@ jobs:
     name: Run Terraform
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
       - name: Configure aws credentials
         uses: "aws-actions/configure-aws-credentials@v2"
         with:
@@ -34,7 +37,7 @@ jobs:
 
       - name: Apply Terraform
         run: terraform plan
-        
+
       - name: Apply Terraform
         run: terraform apply -auto-approve
       
