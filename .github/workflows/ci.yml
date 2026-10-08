@@ -12,12 +12,16 @@ jobs:
   run-terraform:
     name: Run Terraform
     runs-on: ubuntu-latest
+    # id-token: write permite o job pedir o token OIDC usado para logar na AWS.
+    permissions:
+      id-token: write
+      contents: read
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Configure aws credentials
-        uses: "aws-actions/configure-aws-credentials@v2"
+        uses: "aws-actions/configure-aws-credentials@v4"
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
           aws-region: us-east-1
