@@ -14,4 +14,8 @@ provider "aws" {
     # Região onde todos os recursos são criados.
     # Precisa bater com o aws-region do ci.yml.
     region = "us-east-1"
+
+    # Trava de segurança: o Terraform aborta se as credenciais forem de outra conta
+    # (ex.: o perfil "trino", da conta 841162676072).
+    allowed_account_ids = ["223910471502"]
 }

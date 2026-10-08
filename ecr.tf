@@ -4,6 +4,8 @@ resource "aws_ecr_repository" "rocketseat-ci-api" {
     name = "rocketseat-ci"
     # MUTABLE permite sobrescrever uma tag já existente (ex.: "latest").
     image_tag_mutability = "MUTABLE"
+    # Permite o "terraform destroy" apagar o repositório mesmo com imagens dentro.
+    force_delete = true
     image_scanning_configuration {
         scan_on_push = true//scan try find failures
     }

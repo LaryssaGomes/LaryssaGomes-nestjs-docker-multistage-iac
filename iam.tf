@@ -46,6 +46,31 @@ resource "aws_iam_role" "tf-role" {
     Version = "2012-10-17"
     })
 
+    inline_policy {
+        name = "tf-permissions"
+        policy = jsonencode({
+        Statement = [{
+            # Substitui o antigo "apprunner:*" do curso.
+            # Permissões pedidas pela action amazon-ecs-deploy-express-service.
+            Sid = "EcsExpressDeploy",
+            Action = "ecs:*",
+            Effect = "Allow",
+            Resource = "*"
+        },{
+            # "Passar" uma role = entregaßr ao ECS uma role para ele usar.
+            # Restrito só às duas roles do ECS, para o GitHub não repassar qualquer role da conta.
+            Sid = "PassEcsRoles", # TROCA ROLE EM TEMPO DE EXECUÇÃO
+            Action = "iam:*",
+            Effect = "Allow",
+            Resource = [
+                aws_iam_role.ecs-express-role.arn,
+                aws_iam_role.ecs-execution-role.arn
+            ]
+        }]
+        Version = "2012-10-17"
+    })
+    }
+
     tags = {
         IAC = "True"
     }
@@ -161,7 +186,7 @@ resource "aws_iam_role_policy" "ecr-app-permissions" {
                 "ecs:DescribeServiceDeployments",
                 "ecs:TagResource",
                 "ecs:UntagResource"
-            ]
+            ],
             Effect = "Allow",
             Resource = "*"
         },{
