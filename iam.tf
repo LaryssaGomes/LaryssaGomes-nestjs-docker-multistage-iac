@@ -46,34 +46,63 @@ resource "aws_iam_role" "tf-role" {
     Version = "2012-10-17"
   })
 
-  inline_policy {
-    name = "tf-permissions"
-    policy = jsonencode({
-      Statement = [{
-        # Substitui o antigo "apprunner:*" do curso.
-        # Permissões pedidas pela action amazon-ecs-deploy-express-service.
-        Sid      = "EcsExpressDeploy",
-        Action   = "ecs:*",
-        Effect   = "Allow",
-        Resource = "*"
-        }, {
-        # "Passar" uma role = entregaßr ao ECS uma role para ele usar.
-        # Restrito só às duas roles do ECS, para o GitHub não repassar qualquer role da conta.
-        Sid    = "PassEcsRoles", # TROCA ROLE EM TEMPO DE EXECUÇÃO
-        Action = "iam:*",
-        Effect = "Allow",
-        Resource = [
-          aws_iam_role.ecs-express-role.arn,
-          aws_iam_role.ecs-execution-role.arn
-        ]
-      }]
-      Version = "2012-10-17"
-    })
-  }
-
   tags = {
     IAC = "True"
   }
+}
+
+# O que o Terraform (rodando no CI com a tf_role) pode fazer.
+# Só os recursos que este repositório gerencia + o bucket do state.
+# Os ARNs são escritos à mão (e não aws_iam_role.x.arn) porque a tf_role
+# também está na lista, e referenciar a si mesma criaria um ciclo.
+resource "aws_iam_role_policy" "tf-permissions" {
+  # Mesmo nome da antiga inline_policy, para sobrescrevê-la na AWS.
+  name = "tf-permissions"
+  role = aws_iam_role.tf-role.id
+
+  policy = jsonencode({
+    Statement = [{
+      # Ler e gravar o terraform.tfstate (e o .tflock) no bucket do backend.
+      Sid      = "StateBucketList",
+      Action   = "s3:ListBucket",
+      Effect   = "Allow",
+      Resource = "arn:aws:s3:::laryssa-nestjs-iac-tfstate-223910471502"
+      }, {
+      Sid      = "StateObjects",
+      Action   = ["s3:GetObject", "s3:PutObject", "s3:DeleteObject"],
+      Effect   = "Allow",
+      Resource = "arn:aws:s3:::laryssa-nestjs-iac-tfstate-223910471502/*"
+      }, {
+      # Gerenciar o repositório do ECR (ecr.tf).
+      Sid      = "ManageEcr",
+      Action   = "ecr:*",
+      Effect   = "Allow",
+      Resource = "arn:aws:ecr:us-east-1:223910471502:repository/rocketseat-ci"
+      }, {
+      # Gerenciar as roles, o provedor OIDC e a service-linked role deste arquivo.
+      Sid    = "ManageIam",
+      Action = "iam:*",
+      Effect = "Allow",
+      Resource = [
+        "arn:aws:iam::223910471502:oidc-provider/token.actions.githubusercontent.com",
+        "arn:aws:iam::223910471502:role/tf_role",
+        "arn:aws:iam::223910471502:role/ecr_role",
+        "arn:aws:iam::223910471502:role/ecs_express_role",
+        "arn:aws:iam::223910471502:role/ecs_execution_role",
+        "arn:aws:iam::223910471502:role/aws-service-role/ecs.amazonaws.com/AWSServiceRoleForECS"
+      ]
+      }, {
+      # As policies gerenciadas pela AWS anexadas nas roles do ECS (só leitura).
+      Sid    = "ReadAwsManagedPolicies",
+      Action = ["iam:GetPolicy", "iam:GetPolicyVersion"],
+      Effect = "Allow",
+      Resource = [
+        "arn:aws:iam::aws:policy/service-role/AmazonECSInfrastructureRoleforExpressGatewayServices",
+        "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
+      ]
+    }]
+    Version = "2012-10-17"
+  })
 }
 # Infrastructure role do ECS Express Mode (vai no infrastructure-role-arn do ci.yml).
 resource "aws_iam_role" "ecs-express-role" {

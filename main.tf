@@ -8,6 +8,17 @@ terraform {
       version = "~> 6.23"
     }
   }
+
+  # State remoto no S3, compartilhado entre a sua máquina e o CI.
+  # Sem isso, cada execução do CI começa com o state vazio e tenta recriar tudo.
+  # O bucket foi criado à mão (fora do Terraform), porque precisa existir antes do init.
+  backend "s3" {
+    bucket = "laryssa-nestjs-iac-tfstate-223910471502"
+    key    = "nestjs-docker-multistage-iac/terraform.tfstate"
+    region = "us-east-1"
+    # Trava o state com um arquivo .tflock no próprio bucket (Terraform >= 1.10).
+    use_lockfile = true
+  }
 }
 
 provider "aws" {
