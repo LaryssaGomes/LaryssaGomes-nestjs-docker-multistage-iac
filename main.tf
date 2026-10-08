@@ -1,4 +1,5 @@
 # Configuração geral do Terraform: qual provider usar e em qual versão.
+# toda vez que faz definicao de mooodulo e alterarna o state, precisa rodar terraform init novamente.
 terraform {
   required_providers {
     aws = {
@@ -29,4 +30,23 @@ provider "aws" {
   # Trava de segurança: o Terraform aborta se as credenciais forem de outra conta
   # (ex.: o perfil "trino", da conta 841162676072).
   allowed_account_ids = ["223910471502"]
+}
+
+resource "aws_s3_bucket" "tfstate" {
+  bucket = "laryssa-nestjs-iac-tfstate-223910471502"
+  force_destroy = true
+  lifecycle {
+    prevent_destroy = true
+  }
+  acl    = "private"
+  tags = {
+    IAC = "True"
+  }
+}
+
+resource "aws_s3_bucket_versioning" "tfstate" {
+  bucket = aws_s3_bucket.tfstate.id
+  versioning_configuration {
+    status = "Enabled"
+  }
 }
