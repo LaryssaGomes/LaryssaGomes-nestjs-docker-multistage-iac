@@ -1,4 +1,5 @@
 # Repositório privado de imagens Docker (ECR), para onde o CI faz o push.
+# Boas pratica: sempre versionar as imagens e permitir a varredura de vulnerabilidades.
 resource "aws_ecr_repository" "rocketseat-ci-api" {
   # Nome real na AWS. Precisa ser igual ao ECR_REPOSITORY do ci.yml.
   name = "rocketseat-ci"
